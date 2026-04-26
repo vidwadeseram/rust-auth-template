@@ -121,3 +121,23 @@ impl From<&User> for UserResponseData {
         }
     }
 }
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct VerifyEmailRequest {
+    #[validate(length(min = 1, message = "Token is required."))]
+    pub token: String,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct ForgotPasswordRequest {
+    #[validate(email(message = "Email must be valid."))]
+    pub email: String,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct ResetPasswordRequest {
+    #[validate(length(min = 1, message = "Token is required."))]
+    pub token: String,
+    #[validate(length(min = 8, max = 128, message = "Password must be between 8 and 128 characters."))]
+    pub new_password: String,
+}
