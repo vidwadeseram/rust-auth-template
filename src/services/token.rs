@@ -86,7 +86,13 @@ impl TokenService {
     }
 
     pub fn hash_token(&self, token: &str) -> String {
-        format!("{:x}", Sha256::digest(token.as_bytes()))
+        let digest = Sha256::digest(token.as_bytes());
+        let mut out = String::with_capacity(digest.len() * 2);
+        for byte in digest.iter() {
+            use std::fmt::Write;
+            let _ = write!(out, "{:02x}", byte);
+        }
+        out
     }
 
     pub fn refresh_expires_at(&self) -> chrono::DateTime<Utc> {
