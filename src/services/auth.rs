@@ -149,3 +149,71 @@ impl AuthService {
 fn parse_uuid(value: &str) -> Result<Uuid, AppError> {
     Uuid::parse_str(value).map_err(|_| AppError::Unauthorized("Invalid token subject.".to_string()))
 }
+
+impl AuthService {
+    pub async fn verify_email(&self, token: &str) -> Result<(), AppError> {
+        let claims = self
+            .state
+            .token_service
+            .decode_token(token, "verification")?;
+        let user_id = parse_uuid(&claims.sub)?;
+        let user = User::find_active_by_id(&self.state.pool, user_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("User not found.".to_string()))?;
+
+        if user.is_verified {
+            return Err(AppError::BadRequest("Email is already verified.".to_string()));
+        }
+
+        sqlx::query("UPDATE users SET is_verified = true, updated_at = NOW() WHERE id = $1")
+            .bind(user_id)
+            .execute(&self.state.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn forgot_password(&self, email: &str) -> Result<(), AppError> {
+        let email = email.trim().to_lowercase();
+        let user = match User::find_by_email(&self.state.pool, &email).await? {
+            Some(u) => u,
+            None => return Ok(()),
+        };
+
+        let reset_token = self
+            .state
+            .token_service
+            .create_verification_token(user.id, &user.email)?;
+
+        self.state
+            .mailer
+            .send_email(
+                &user.email,
+                "Password Reset",
+                &format!("Your password reset token is: {}", reset_token),
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn reset_password(&self, token: &str, new_password: &str) -> Result<(), AppError> {
+        let claims = self
+            .state
+            .token_service
+            .decode_token(token, "verification")?;
+        let user_id = parse_uuid(&claims.sub)?;
+        let user = User::find_active_by_id(&self.state.pool, user_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("User not found.".to_string()))?;
+
+        let password_hash = self.hash_password(new_password)?;
+        sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
+            .bind(&password_hash)
+            .bind(user.id)
+            .execute(&self.state.pool)
+            .await?;
+
+        Ok(())
+    }
+}
