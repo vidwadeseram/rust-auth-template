@@ -5,6 +5,8 @@ use axum::{routing::get, Router};
 use sqlx::PgPool;
 use tokio::signal;
 use tracing::info;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 mod config;
 mod db;
@@ -29,6 +31,60 @@ pub struct AppState {
     pub mailer: Mailer,
 }
 
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        handlers::auth::register,
+        handlers::auth::login,
+        handlers::auth::logout,
+        handlers::auth::refresh,
+        handlers::auth::me,
+        handlers::auth::verify_email,
+        handlers::auth::forgot_password,
+        handlers::auth::reset_password,
+        handlers::admin::list_roles,
+        handlers::admin::list_permissions,
+        handlers::admin::get_role_permissions,
+        handlers::admin::assign_permission,
+        handlers::admin::remove_permission,
+        handlers::admin::list_users,
+        handlers::admin::get_user,
+        handlers::admin::update_user,
+        handlers::admin::delete_user,
+        handlers::admin::get_user_permissions,
+        handlers::admin::assign_role,
+        handlers::admin::remove_role,
+        handlers::health::health_check,
+    ),
+    components(schemas(
+        schema::RegisterRequest,
+        schema::LoginRequest,
+        schema::RefreshTokenRequest,
+        schema::TokenData,
+        schema::TokenResponse,
+        schema::MessageData,
+        schema::MessageResponse,
+        schema::AuthUserResponse,
+        schema::AuthUserEnvelope,
+        schema::UserResponse,
+        schema::UserResponseData,
+        schema::VerifyEmailRequest,
+        schema::ForgotPasswordRequest,
+        schema::ResetPasswordRequest,
+        schema::PermissionResponse,
+        schema::RolePermissionRequest,
+        schema::UserRoleRequest,
+        schema::UserUpdateRequest,
+        handlers::admin::RoleResponse,
+    )),
+    tags(
+        (name = "auth", description = "Authentication endpoints"),
+        (name = "admin", description = "Admin & RBAC endpoints"),
+        (name = "health", description = "Health check"),
+    )
+)]
+struct ApiDoc;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_tracing()?;
@@ -45,6 +101,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let app = Router::new()
+        .merge(SwaggerUi::new("/docs").url("/openapi.json", ApiDoc::openapi()))
         .route("/health", get(health_check))
         .nest("/api/v1/auth", auth_router())
         .nest("/api/v1/admin", admin::router())

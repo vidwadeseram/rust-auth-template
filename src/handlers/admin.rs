@@ -45,7 +45,8 @@ async fn require_perm(state: &AppState, user_id: Uuid, perm: &str) -> Result<(),
     Ok(())
 }
 
-async fn list_roles(
+#[utoipa::path(get, path = "/api/v1/admin/roles", responses((status = 200, description = "List roles")), tag = "admin")]
+pub async fn list_roles(
     State(state): State<AppState>,
     user: CurrentUser,
 ) -> Result<Json<Vec<RoleResponse>>, AppError> {
@@ -58,7 +59,8 @@ async fn list_roles(
     }).collect()))
 }
 
-async fn list_permissions(
+#[utoipa::path(get, path = "/api/v1/admin/permissions", responses((status = 200, description = "List permissions")), tag = "admin")]
+pub async fn list_permissions(
     State(state): State<AppState>,
     user: CurrentUser,
 ) -> Result<Json<Vec<PermissionResponse>>, AppError> {
@@ -69,7 +71,8 @@ async fn list_permissions(
     }).collect()))
 }
 
-async fn get_role_permissions(
+#[utoipa::path(get, path = "/api/v1/admin/roles/{role_id}/permissions", responses((status = 200, description = "Role permissions")), tag = "admin")]
+pub async fn get_role_permissions(
     State(state): State<AppState>,
     user: CurrentUser,
     Path(role_id): Path<Uuid>,
@@ -81,7 +84,8 @@ async fn get_role_permissions(
     }).collect()))
 }
 
-async fn assign_permission(
+#[utoipa::path(post, path = "/api/v1/admin/roles/permissions", request_body = RolePermissionRequest, responses((status = 200, description = "Permission assigned")), tag = "admin")]
+pub async fn assign_permission(
     State(state): State<AppState>,
     user: CurrentUser,
     Json(payload): Json<RolePermissionRequest>,
@@ -91,7 +95,8 @@ async fn assign_permission(
     Ok(Json(MessageResponse { data: MessageData { message: "Permission assigned to role.".to_string() } }))
 }
 
-async fn remove_permission(
+#[utoipa::path(delete, path = "/api/v1/admin/roles/permissions", request_body = RolePermissionRequest, responses((status = 200, description = "Permission removed")), tag = "admin")]
+pub async fn remove_permission(
     State(state): State<AppState>,
     user: CurrentUser,
     Json(payload): Json<RolePermissionRequest>,
@@ -101,7 +106,8 @@ async fn remove_permission(
     Ok(Json(MessageResponse { data: MessageData { message: "Permission removed from role.".to_string() } }))
 }
 
-async fn list_users(
+#[utoipa::path(get, path = "/api/v1/admin/users", responses((status = 200, description = "List users")), tag = "admin")]
+pub async fn list_users(
     State(state): State<AppState>,
     user: CurrentUser,
 ) -> Result<Json<Vec<UserResponse>>, AppError> {
@@ -112,7 +118,8 @@ async fn list_users(
     Ok(Json(users.iter().map(|u| crate::schema::UserResponseData::from(u).into()).collect()))
 }
 
-async fn get_user(
+#[utoipa::path(get, path = "/api/v1/admin/users/{user_id}", responses((status = 200, description = "User details")), tag = "admin")]
+pub async fn get_user(
     State(state): State<AppState>,
     user: CurrentUser,
     Path(user_id): Path<Uuid>,
@@ -122,7 +129,8 @@ async fn get_user(
     Ok(Json(UserResponse { data: crate::schema::UserResponseData::from(&found) }))
 }
 
-async fn update_user(
+#[utoipa::path(patch, path = "/api/v1/admin/users/{user_id}/patch", request_body = UserUpdateRequest, responses((status = 200, description = "User updated")), tag = "admin")]
+pub async fn update_user(
     State(state): State<AppState>,
     user: CurrentUser,
     Path(user_id): Path<Uuid>,
@@ -143,7 +151,8 @@ async fn update_user(
     Ok(Json(UserResponse { data: crate::schema::UserResponseData::from(&updated) }))
 }
 
-async fn delete_user(
+#[utoipa::path(delete, path = "/api/v1/admin/users/{user_id}", responses((status = 200, description = "User deleted")), tag = "admin")]
+pub async fn delete_user(
     State(state): State<AppState>,
     user: CurrentUser,
     Path(user_id): Path<Uuid>,
@@ -154,7 +163,8 @@ async fn delete_user(
     Ok(Json(MessageResponse { data: MessageData { message: "User deleted.".to_string() } }))
 }
 
-async fn get_user_permissions(
+#[utoipa::path(get, path = "/api/v1/admin/users/{user_id}/permissions", responses((status = 200, description = "User permissions")), tag = "admin")]
+pub async fn get_user_permissions(
     State(state): State<AppState>,
     user: CurrentUser,
     Path(target_user_id): Path<Uuid>,
@@ -166,7 +176,8 @@ async fn get_user_permissions(
     }).collect()))
 }
 
-async fn assign_role(
+#[utoipa::path(post, path = "/api/v1/admin/users/roles", request_body = UserRoleRequest, responses((status = 200, description = "Role assigned")), tag = "admin")]
+pub async fn assign_role(
     State(state): State<AppState>,
     user: CurrentUser,
     Json(payload): Json<UserRoleRequest>,
@@ -176,7 +187,8 @@ async fn assign_role(
     Ok(Json(MessageResponse { data: MessageData { message: "Role assigned to user.".to_string() } }))
 }
 
-async fn remove_role(
+#[utoipa::path(delete, path = "/api/v1/admin/users/roles", request_body = UserRoleRequest, responses((status = 200, description = "Role removed")), tag = "admin")]
+pub async fn remove_role(
     State(state): State<AppState>,
     user: CurrentUser,
     Json(payload): Json<UserRoleRequest>,
@@ -192,7 +204,7 @@ impl From<crate::schema::UserResponseData> for UserResponse {
     }
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
 pub struct RoleResponse {
     pub id: Uuid,
     pub name: String,
