@@ -19,15 +19,6 @@ impl Permission {
         .await
     }
 
-    pub async fn find_by_name(pool: &PgPool, name: &str) -> Result<Option<Self>, sqlx::Error> {
-        sqlx::query_as::<_, Self>(
-            "SELECT id, name, description, created_at FROM permissions WHERE name = $1",
-        )
-        .bind(name)
-        .fetch_optional(pool)
-        .await
-    }
-
     pub async fn find_by_user_id(pool: &PgPool, user_id: Uuid) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as::<_, Self>(
             r#"
