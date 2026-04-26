@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/api/v1/auth", auth_router())
-        .nest("/api/v1/admin", admin::router())
+        .merge(admin::router())
         .with_state(state);
 
     let bind_port = if config.app.port == 8003 {
