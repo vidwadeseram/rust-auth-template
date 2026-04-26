@@ -69,6 +69,18 @@ impl TokenService {
         })
     }
 
+    pub fn generate_one_time_token(&self) -> String {
+        format!("{}.{}", Uuid::new_v4(), Uuid::new_v4())
+    }
+
+    pub fn verification_token_expires_at(&self) -> chrono::DateTime<Utc> {
+        Utc::now() + Duration::days(1)
+    }
+
+    pub fn password_reset_token_expires_at(&self) -> chrono::DateTime<Utc> {
+        Utc::now() + Duration::hours(1)
+    }
+
     pub fn decode_token(&self, token: &str, expected_type: &str) -> Result<TokenClaims, AppError> {
         let mut validation = Validation::new(Algorithm::HS256);
         validation.validate_exp = true;

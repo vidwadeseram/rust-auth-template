@@ -1,20 +1,41 @@
-use std::ops::Deref;
-
 use axum::{
     extract::FromRequestParts,
     http::{header, request::Parts},
 };
 use uuid::Uuid;
 
-use crate::{errors::AppError, models::user::User, AppState};
+use crate::{
+    errors::AppError,
+    models::{permission::Permission, role::Role, user::User},
+    schema::UserResponseData,
+    AppState,
+};
 
-pub struct CurrentUser(pub User);
+#[derive(Clone, Debug)]
+pub struct CurrentUser {
+    pub user: User,
+    pub roles: Vec<Role>,
+    pub permissions: Vec<Permission>,
+}
 
-impl Deref for CurrentUser {
-    type Target = User;
+impl CurrentUser {
+    pub fn require(&self, permission_name: &str) -> Result<(), AppError> {
+        if self
+            .permissions
+            .iter()
+            .any(|permission| permission.name == permission_name)
+        {
+            Ok(())
+        } else {
+            Err(AppError::Forbidden(format!(
+                "Permission '{}' is required.",
+                permission_name
+            )))
+        }
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    pub fn into_response(self) -> UserResponseData {
+        UserResponseData::from_parts(self.user, self.roles, self.permissions)
     }
 }
 
@@ -48,7 +69,13 @@ impl FromRequestParts<AppState> for CurrentUser {
             .ok_or_else(|| {
                 AppError::Unauthorized("Authenticated user was not found.".to_string())
             })?;
+        let roles = Role::find_by_user_id(&state.pool, user_id).await?;
+        let permissions = Permission::find_by_user_id(&state.pool, user_id).await?;
 
-        Ok(Self(user))
+        Ok(Self {
+            user,
+            roles,
+            permissions,
+        })
     }
 }

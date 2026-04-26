@@ -17,7 +17,7 @@ mod schema;
 mod services;
 
 use config::AppConfig;
-use handlers::{auth::router as auth_router, health::health_check};
+use handlers::{admin, auth::router as auth_router, health::health_check};
 use mailer::Mailer;
 use services::token::TokenService;
 
@@ -47,6 +47,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/health", get(health_check))
         .nest("/api/v1/auth", auth_router())
+        .merge(admin::router())
         .with_state(state);
 
     let bind_port = if config.app.port == 8003 {
