@@ -9,9 +9,18 @@ pub struct Mailer {
 
 impl Mailer {
     pub fn new(config: SmtpConfig) -> Self {
-        let client = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(config.host)
-            .port(config.port)
-            .build();
+        let client = if config.port == 1025 {
+            // Development mode (e.g., MailHog) — no TLS
+            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(config.host)
+                .port(config.port)
+                .build()
+        } else {
+            // Production mode — use STARTTLS
+            AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&config.host)
+                .expect("failed to create SMTP transport")
+                .port(config.port)
+                .build()
+        };
 
         Self { client }
     }

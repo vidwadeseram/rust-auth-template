@@ -35,7 +35,6 @@ pub struct AppConfig {
 impl AppConfig {
     pub fn from_env() -> Result<Self> {
         let _ = dotenv();
-        let _ = dotenvy::from_filename_override(".env.example");
 
         Ok(Self {
             database: DatabaseConfig {
