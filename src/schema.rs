@@ -10,7 +10,11 @@ use crate::models::user::User;
 pub struct RegisterRequest {
     #[validate(email(message = "Email must be valid."))]
     pub email: String,
-    #[validate(length(min = 8, max = 128, message = "Password must be between 8 and 128 characters."))]
+    #[validate(length(
+        min = 8,
+        max = 128,
+        message = "Password must be between 8 and 128 characters."
+    ))]
     pub password: String,
     #[validate(length(min = 1, max = 100, message = "First name is required."))]
     pub first_name: String,
@@ -22,7 +26,11 @@ pub struct RegisterRequest {
 pub struct LoginRequest {
     #[validate(email(message = "Email must be valid."))]
     pub email: String,
-    #[validate(length(min = 8, max = 128, message = "Password must be between 8 and 128 characters."))]
+    #[validate(length(
+        min = 8,
+        max = 128,
+        message = "Password must be between 8 and 128 characters."
+    ))]
     pub password: String,
 }
 
@@ -87,13 +95,31 @@ pub struct UserResponseData {
 
 impl From<User> for UserResponseData {
     fn from(user: User) -> Self {
-        Self { id: user.id, email: user.email, first_name: user.first_name, last_name: user.last_name, is_active: user.is_active, is_verified: user.is_verified, created_at: user.created_at, updated_at: user.updated_at }
+        Self {
+            id: user.id,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            is_active: user.is_active,
+            is_verified: user.is_verified,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        }
     }
 }
 
 impl From<&User> for UserResponseData {
     fn from(user: &User) -> Self {
-        Self { id: user.id, email: user.email.clone(), first_name: user.first_name.clone(), last_name: user.last_name.clone(), is_active: user.is_active, is_verified: user.is_verified, created_at: user.created_at, updated_at: user.updated_at }
+        Self {
+            id: user.id,
+            email: user.email.clone(),
+            first_name: user.first_name.clone(),
+            last_name: user.last_name.clone(),
+            is_active: user.is_active,
+            is_verified: user.is_verified,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        }
     }
 }
 
@@ -113,7 +139,11 @@ pub struct ForgotPasswordRequest {
 pub struct ResetPasswordRequest {
     #[validate(length(min = 1, message = "Token is required."))]
     pub token: String,
-    #[validate(length(min = 8, max = 128, message = "Password must be between 8 and 128 characters."))]
+    #[validate(length(
+        min = 8,
+        max = 128,
+        message = "Password must be between 8 and 128 characters."
+    ))]
     pub new_password: String,
 }
 

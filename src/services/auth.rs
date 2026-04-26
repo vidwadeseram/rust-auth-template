@@ -162,7 +162,9 @@ impl AuthService {
             .ok_or_else(|| AppError::NotFound("User not found.".to_string()))?;
 
         if user.is_verified {
-            return Err(AppError::BadRequest("Email is already verified.".to_string()));
+            return Err(AppError::BadRequest(
+                "Email is already verified.".to_string(),
+            ));
         }
 
         sqlx::query("UPDATE users SET is_verified = true, updated_at = NOW() WHERE id = $1")
