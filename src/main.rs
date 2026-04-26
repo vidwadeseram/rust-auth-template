@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 use anyhow::Context;
 use axum::{routing::get, Router};
@@ -21,6 +22,7 @@ mod services;
 use config::AppConfig;
 use handlers::{admin, auth::router as auth_router, health::health_check};
 use mailer::Mailer;
+use middleware::ratelimit::RateLimiter;
 use services::token::TokenService;
 
 #[derive(Clone)]
@@ -100,10 +102,16 @@ async fn main() -> anyhow::Result<()> {
         config: config.clone(),
     };
 
+    let rate_limiter = Arc::new(RateLimiter::new(1.0 / 60.0, 5.0));
+
+    let auth_routes = auth_router()
+        .layer(axum::middleware::from_fn(RateLimiter::middleware))
+        .layer(axum::Extension(rate_limiter));
+
     let app = Router::new()
         .merge(SwaggerUi::new("/docs").url("/openapi.json", ApiDoc::openapi()))
         .route("/health", get(health_check))
-        .nest("/api/v1/auth", auth_router())
+        .nest("/api/v1/auth", auth_routes)
         .nest("/api/v1/admin", admin::router())
         .with_state(state);
 

@@ -46,17 +46,24 @@ impl AuthService {
             .token_service
             .create_verification_token(user.id, &user.email)?;
 
-        self.state
-            .mailer
-            .send_email(
-                &user.email,
-                "Verify your account",
-                &format!(
-                    "Welcome {}, your verification token is: {}",
-                    user.first_name, verification_token
-                ),
-            )
-            .await?;
+        let mailer = self.state.mailer.clone();
+        let email = user.email.clone();
+        let first_name = user.first_name.clone();
+        tokio::spawn(async move {
+            if let Err(e) = mailer
+                .send_email(
+                    &email,
+                    "Verify your account",
+                    &format!(
+                        "Welcome {}, your verification token is: {}",
+                        first_name, verification_token
+                    ),
+                )
+                .await
+            {
+                tracing::warn!(error = %e, "failed to send verification email");
+            }
+        });
 
         Ok(user)
     }
@@ -187,14 +194,20 @@ impl AuthService {
             .token_service
             .create_verification_token(user.id, &user.email)?;
 
-        self.state
-            .mailer
-            .send_email(
-                &user.email,
-                "Password Reset",
-                &format!("Your password reset token is: {}", reset_token),
-            )
-            .await?;
+        let mailer = self.state.mailer.clone();
+        let email = user.email.clone();
+        tokio::spawn(async move {
+            if let Err(e) = mailer
+                .send_email(
+                    &email,
+                    "Password Reset",
+                    &format!("Your password reset token is: {}", reset_token),
+                )
+                .await
+            {
+                tracing::warn!(error = %e, "failed to send password reset email");
+            }
+        });
 
         Ok(())
     }
