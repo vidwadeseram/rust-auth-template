@@ -26,6 +26,7 @@ services:
 
   mailhog:
     image: mailhog/mailhog:latest
+    platform: linux/amd64
     expose:
       - "1025"
       - "8025"
