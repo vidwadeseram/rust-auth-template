@@ -144,9 +144,7 @@ pub async fn list_users(
     user: CurrentUser,
 ) -> Result<Json<Vec<UserResponse>>, AppError> {
     require_perm(&state, user.0.id, "users.read").await?;
-    let users = sqlx::query_as::<_, User>(
-        "SELECT id, email, password_hash, first_name, last_name, is_active, is_verified, created_at, updated_at FROM users ORDER BY created_at DESC"
-    ).fetch_all(&state.pool).await?;
+    let users = User::find_all(&state.pool).await?;
     Ok(Json(
         users
             .iter()

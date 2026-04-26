@@ -66,4 +66,16 @@ impl User {
         .fetch_optional(pool)
         .await
     }
+
+    pub async fn find_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        sqlx::query_as::<_, Self>(
+            r#"
+            SELECT id, email, password_hash, first_name, last_name, is_active, is_verified, created_at, updated_at
+            FROM users
+            ORDER BY created_at DESC
+            "#,
+        )
+        .fetch_all(pool)
+        .await
+    }
 }
