@@ -1,3 +1,4 @@
+use crate::models::role::Role;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -20,5 +21,9 @@ impl UserRole {
             .execute(pool)
             .await?;
         Ok(())
+    }
+
+    pub async fn list_by_user_id(pool: &PgPool, user_id: Uuid) -> Result<Vec<Role>, sqlx::Error> {
+        Role::find_by_user_id(pool, user_id).await
     }
 }

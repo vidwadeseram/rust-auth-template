@@ -17,6 +17,32 @@ impl Permission {
             .await
     }
 
+    pub async fn create(
+        pool: &PgPool,
+        name: &str,
+        description: &str,
+    ) -> Result<Self, sqlx::Error> {
+        sqlx::query_as::<_, Self>(
+            "INSERT INTO permissions (name, description) VALUES ($1, $2) RETURNING id, name, description, created_at",
+        )
+        .bind(name)
+        .bind(description)
+        .fetch_one(pool)
+        .await
+    }
+
+    pub async fn find_by_id(
+        pool: &PgPool,
+        permission_id: Uuid,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        sqlx::query_as::<_, Self>(
+            "SELECT id, name, description, created_at FROM permissions WHERE id = $1",
+        )
+        .bind(permission_id)
+        .fetch_optional(pool)
+        .await
+    }
+
     pub async fn find_by_name(pool: &PgPool, name: &str) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as::<_, Self>("SELECT id, name, description, created_at FROM permissions WHERE name = $1")
             .bind(name)
@@ -27,34 +53,17 @@ impl Permission {
     pub async fn find_by_user_id(pool: &PgPool, user_id: Uuid) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as::<_, Self>(
             r#"
-            SELECT p.id, p.name, p.description, p.created_at
+            SELECT DISTINCT p.id, p.name, p.description, p.created_at
             FROM permissions p
             JOIN role_permissions rp ON rp.permission_id = p.id
             JOIN user_roles ur ON ur.role_id = rp.role_id
             WHERE ur.user_id = $1
+            ORDER BY p.name
             "#,
         )
         .bind(user_id)
         .fetch_all(pool)
         .await
-    }
-
-    pub async fn user_has_permission(pool: &PgPool, user_id: Uuid, permission_name: &str) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query_scalar::<_, bool>(
-            r#"
-            SELECT EXISTS(
-                SELECT 1 FROM permissions p
-                JOIN role_permissions rp ON rp.permission_id = p.id
-                JOIN user_roles ur ON ur.role_id = rp.role_id
-                WHERE ur.user_id = $1 AND p.name = $2
-            )
-            "#,
-        )
-        .bind(user_id)
-        .bind(permission_name)
-        .fetch_one(pool)
-        .await?;
-        Ok(result)
     }
 
     pub async fn find_by_role_id(pool: &PgPool, role_id: Uuid) -> Result<Vec<Self>, sqlx::Error> {
@@ -64,11 +73,37 @@ impl Permission {
             FROM permissions p
             JOIN role_permissions rp ON rp.permission_id = p.id
             WHERE rp.role_id = $1
+            ORDER BY p.name
             "#,
         )
         .bind(role_id)
         .fetch_all(pool)
         .await
+    }
+
+    pub async fn update(
+        pool: &PgPool,
+        permission_id: Uuid,
+        name: &str,
+        description: &str,
+    ) -> Result<Self, sqlx::Error> {
+        sqlx::query_as::<_, Self>(
+            "UPDATE permissions SET name = $1, description = $2 WHERE id = $3 RETURNING id, name, description, created_at",
+        )
+        .bind(name)
+        .bind(description)
+        .bind(permission_id)
+        .fetch_one(pool)
+        .await
+    }
+
+    pub async fn delete(pool: &PgPool, permission_id: Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM permissions WHERE id = $1")
+            .bind(permission_id)
+            .execute(pool)
+            .await?;
+
+        Ok(())
     }
 
     pub async fn assign_to_role(pool: &PgPool, role_id: Uuid, permission_id: Uuid) -> Result<(), sqlx::Error> {
