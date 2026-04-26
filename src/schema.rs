@@ -141,3 +141,30 @@ pub struct ResetPasswordRequest {
     #[validate(length(min = 8, max = 128, message = "Password must be between 8 and 128 characters."))]
     pub new_password: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct PermissionResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RolePermissionRequest {
+    pub role_id: Uuid,
+    pub permission_id: Uuid,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UserRoleRequest {
+    pub user_id: Uuid,
+    pub role_id: Uuid,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UserUpdateRequest {
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub is_active: Option<bool>,
+}
