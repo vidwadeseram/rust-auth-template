@@ -3,11 +3,11 @@ use std::sync::Mutex;
 use std::time::Instant;
 
 use axum::{
-    body::Body,
     extract::Request,
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
+    Json,
 };
 
 struct Bucket {
@@ -52,12 +52,12 @@ impl RateLimiter {
             if !limiter.allow(&ip) {
                 return (
                     StatusCode::TOO_MANY_REQUESTS,
-                    serde_json::json!({
+                    Json(serde_json::json!({
                         "error": {
                             "code": "RATE_LIMITED",
                             "message": "Too many requests. Please try again later."
                         }
-                    }),
+                    })),
                 )
                     .into_response();
             }
